@@ -1,0 +1,6 @@
+{
+  "name": "google/google-api",
+  "description": "Google APIs Client Library for PHP",
+  "type": "library",
+  "license": "Apache-2.0"
+}
