@@ -39,7 +39,7 @@ class Google_REST {
     return $ret;
   }
 
-  
+
   /**
    * Decode an HTTP Response.
    * @static
@@ -51,7 +51,7 @@ class Google_REST {
     $code = $response->getResponseHttpCode();
     $body = $response->getResponseBody();
     $decoded = null;
-    
+
     if ((intVal($code)) >= 300) {
       $decoded = json_decode($body, true);
       $err = 'Error calling ' . $response->getRequestMethod() . ' ' . $response->getUrl();
@@ -65,7 +65,7 @@ class Google_REST {
 
       throw new Google_ServiceException($err, $code, null, $decoded['error']['errors']);
     }
-    
+
     // Only attempt to decode the response, if the response code wasn't (204) 'no content'
     if ($code != '204') {
       $decoded = json_decode($body, true);
@@ -105,6 +105,11 @@ class Google_REST {
           foreach ($paramSpec['value'] as $value) {
             $queryVars[] = $paramName . '=' . rawurlencode($value);
           }
+        } elseif ($paramSpec['type'] === 'object' && is_array($paramSpec['value'])) {
+// Add support for array/object query parameters.
+// @See: https://github.com/google/google-api-php-client/issues/25
+          $objParam = array($paramName => $paramSpec['value']);
+          $queryVars[] = http_build_query($objParam);
         } else {
           $queryVars[] = $paramName . '=' . rawurlencode($paramSpec['value']);
         }
