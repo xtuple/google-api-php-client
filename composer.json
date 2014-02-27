@@ -1,6 +1,17 @@
 {
-  "name": "google/google-api-php-client",
-  "description": "Google APIs Client Library for PHP",
+  "name": "google/apiclient",
   "type": "library",
-  "license": "Apache-2.0"
+  "description": "Client library for Google APIs",
+  "keywords": ["google"],
+  "homepage": "http://developers.google.com/api-client-library/php",
+  "license": "Apache-2.0",
+  "require": {
+    "php": ">=5.2.1"
+  },
+  "autoload": {
+    "classmap": [
+      "src/"
+    ]
+  },
+  "include-path": ["src/"]
 }
