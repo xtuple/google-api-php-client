@@ -106,10 +106,23 @@ class Google_REST {
             $queryVars[] = $paramName . '=' . rawurlencode($value);
           }
         } elseif ($paramSpec['type'] === 'object' && is_array($paramSpec['value'])) {
-// Add support for array/object query parameters.
-// @See: https://github.com/google/google-api-php-client/issues/25
+          // Add support for array/object query parameters.
+          // @See: https://github.com/google/google-api-php-client/issues/25
           $objParam = array($paramName => $paramSpec['value']);
-          $queryVars[] = http_build_query($objParam);
+          if (!empty($objParam["query"])) {
+            $queryStringParts = [];
+            foreach ($objParam["query"] as $objParamValue) {
+              $queryStringParts[] = strtr("%param=%value", [
+                "%param" => rawurlencode("query[{$objParamValue["column"]}][{$objParamValue["operator"]}]"),
+                "%value" => rawurlencode($objParamValue["value"]),
+              ]);
+            }
+            $queryString = implode("&", $queryStringParts);
+            $queryVars[] = $queryString;
+          }
+          else {
+            $queryVars[] = http_build_query($objParam);
+          }
         } else {
           $queryVars[] = $paramName . '=' . rawurlencode($paramSpec['value']);
         }
