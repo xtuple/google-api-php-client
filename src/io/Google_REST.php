@@ -111,6 +111,19 @@ class Google_REST {
           $objParam = array($paramName => $paramSpec['value']);
           if (!empty($objParam["query"])) {
             $queryStringParts = [];
+            foreach ($objParam["query"] as $key => $value) {
+              if (!is_numeric($key)) {
+                $operator = key($value);
+                $value = array_shift($value);
+                $newValue = [
+                  "column" => $key,
+                  "operator" => $operator,
+                  "value" => $value,
+                ];
+                unset($objParam["query"][$key]);
+                $objParam["query"][] = $newValue;
+              }
+            }
             foreach ($objParam["query"] as $objParamValue) {
               $queryStringParts[] = strtr("%param=%value", [
                 "%param" => rawurlencode("query[{$objParamValue["column"]}][{$objParamValue["operator"]}]"),
