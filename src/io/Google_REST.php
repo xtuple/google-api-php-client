@@ -125,10 +125,20 @@ class Google_REST {
               }
             }
             foreach ($objParam["query"] as $objParamValue) {
-              $queryStringParts[] = strtr("%param=%value", [
-                "%param" => rawurlencode("query[{$objParamValue["column"]}][{$objParamValue["operator"]}]"),
-                "%value" => rawurlencode($objParamValue["value"]),
-              ]);
+              if (!is_array($objParamValue["value"])) {
+                $queryStringParts[] = strtr("%param=%value", [
+                  "%param" => rawurlencode("query[{$objParamValue["column"]}][{$objParamValue["operator"]}]"),
+                  "%value" => rawurlencode($objParamValue["value"]),
+                ]);
+              }
+              else {
+                foreach ($objParamValue["value"] as $k => $v) {
+                  $queryStringParts[] = strtr("%param=%value", [
+                    "%param" => rawurlencode("query[{$objParamValue["column"]}][{$objParamValue["operator"]}][$k]"),
+                    "%value" => rawurlencode($v),
+                  ]);
+                }
+              }
             }
             $queryString = implode("&", $queryStringParts);
             $queryVars[] = $queryString;
