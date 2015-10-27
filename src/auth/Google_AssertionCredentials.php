@@ -62,42 +62,25 @@ class Google_AssertionCredentials {
 
   public function generateAssertion() {
     $now = time();
-
-    $jwtParams = array(
-          'aud' => Google_OAuth2::OAUTH2_TOKEN_URI,
-          'scope' => $this->scopes,
-          'iat' => $now,
-          'exp' => $now + self::MAX_TOKEN_LIFETIME_SECS,
-          'iss' => $this->serviceAccountName,
+    $signedJWT = new \Xtuple\Common\JWT\SignedJWT\RS256SignedJWT(
+      new \Xtuple\Common\JWT\JWT(
+        new \Xtuple\Common\JWT\RegisteredClaims(
+          $this->serviceAccountName,
+          $this->sub,
+          Google_OAuth2::OAUTH2_TOKEN_URI,
+          $now,
+          $now + self::MAX_TOKEN_LIFETIME_SECS,
+          "",
+          ""
+        ), [], [
+          "scope" => $this->scopes,
+          "prn" => $this->sub,
+        ]
+      ), new \Xtuple\Common\SSL\PKCS12\PKCS12File(
+        new \Xtuple\Common\File\File($this->privateKey),
+        $this->privateKeyPassword
+      )
     );
-
-    if ($this->sub !== false) {
-      $jwtParams['sub'] = $this->sub;
-    } else if ($this->prn !== false) {
-      $jwtParams['prn'] = $this->prn;
-    }
-
-    return $this->makeSignedJwt($jwtParams);
-  }
-
-  /**
-   * Creates a signed JWT.
-   * @param array $payload
-   * @return string The signed JWT.
-   */
-  private function makeSignedJwt($payload) {
-    $header = array('typ' => 'JWT', 'alg' => 'RS256');
-
-    $segments = array(
-      Google_Utils::urlSafeB64Encode(json_encode($header)),
-      Google_Utils::urlSafeB64Encode(json_encode($payload))
-    );
-
-    $signingInput = implode('.', $segments);
-    $signer = new Google_P12Signer($this->privateKey, $this->privateKeyPassword);
-    $signature = $signer->sign($signingInput);
-    $segments[] = Google_Utils::urlSafeB64Encode($signature);
-
-    return implode(".", $segments);
+    return $signedJWT->encode();
   }
 }
