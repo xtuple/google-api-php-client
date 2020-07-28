@@ -1,27 +1,10 @@
 <?php
-/*
- * Copyright (c) 2010 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- */
-
-require_once '../src/Google_Client.php';
-require_once '../src/contrib/Google_PlusService.php';
+require_once '../../src/Google_Client.php';
+require_once '../../src/contrib/Google_PlusService.php';
 session_start();
 
 $client = new Google_Client();
 $client->setApplicationName("Google+ PHP Starter Application");
-$plus = new Google_PlusService($client);
 
 // Visit https://code.google.com/apis/console?api=plus to generate your
 // client id, client secret, and to register your redirect uri.
@@ -29,12 +12,16 @@ $plus = new Google_PlusService($client);
 // $client->setClientSecret('insert_your_oauth2_client_secret');
 // $client->setRedirectUri('insert_your_oauth2_redirect_uri');
 // $client->setDeveloperKey('insert_your_developer_key');
+$plus = new Google_PlusService($client);
 
 if (isset($_GET['logout'])) {
   unset($_SESSION['token']);
 }
 
 if (isset($_GET['code'])) {
+  if (strval($_SESSION['state']) !== strval($_GET['state'])) {
+    die("The session state did not match.");
+  }
   $client->authenticate();
   $_SESSION['token'] = $client->getAccessToken();
   $redirect = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'];
@@ -46,17 +33,29 @@ if (isset($_SESSION['token'])) {
 }
 
 if ($client->getAccessToken()) {
-  $client->setUseBatch(true);
- 
-  $batch = new Google_BatchRequest();
-  $batch->add($plus->people->get('me'), 'key1');
-  $batch->add($plus->people->get('me'), 'key2');
-  $result = $batch->execute();
-  print "<pre>" . print_r($result, true) . "</pre>";
+  $me = $plus->people->get('me');
+  print "Your Profile: <pre>" . print_r($me, true) . "</pre>";
+
+  $params = array('maxResults' => 100);
+  $activities = $plus->activities->listActivities('me', 'public', $params);
+  print "Your Activities: <pre>" . print_r($activities, true) . "</pre>";
+  
+  $params = array(
+    'orderBy' => 'best',
+    'maxResults' => '20',
+  );
+  $results = $plus->activities->search('Google+ API', $params);
+  foreach($results['items'] as $result) {
+    print "Search Result: <pre>{$result['object']['content']}</pre>\n";
+  }
 
   // The access token may have been updated lazily.
   $_SESSION['token'] = $client->getAccessToken();
 } else {
+  $state = mt_rand();
+  $client->setState($state);
+  $_SESSION['state'] = $state;
+
   $authUrl = $client->createAuthUrl();
   print "<a class='login' href='$authUrl'>Connect Me!</a>";
 }
